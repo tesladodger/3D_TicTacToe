@@ -10,19 +10,20 @@ import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.math.collision.Ray;
 //import com.badlogic.gdx.scenes.scene2d.Event;
 //import com.badlogic.gdx.scenes.scene2d.EventListener;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-//import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
-//import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Camera;
-//import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-//import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
@@ -74,10 +75,11 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
 
     //Stage Stuff
     private Stage stage;
-    //private Texture resetBtnTexture;
-    //private TextureRegion resetBtnTextureRegion;
-    //private TextureRegionDrawable resetBtnTextureRegionDrawable;
-    //private ImageButton resetBtn;
+    private Texture playerBtnTex;
+    private TextureRegion playerBtnTexRegn;
+    private TextureRegionDrawable playerBtnTexRegnDrawable;
+    private ImageButton playerButton1;
+    private ImageButton playerButton2;
     private Label label;
     private BitmapFont font;
     private StringBuilder strBuilder;
@@ -85,26 +87,28 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
     @Override
     public void create() {
         //Stage
-        //resetBtnTexture = new Texture(Gdx.files.internal("reset.png"));
-        //resetBtnTextureRegion = new TextureRegion(resetBtnTexture);
-        //resetBtnTextureRegionDrawable = new TextureRegionDrawable(resetBtnTextureRegion);
-        //resetBtn = new ImageButton(resetBtnTextureRegionDrawable);
-        //resetBtn.addListener(new EventListener() {
-            //@Override
-            //public boolean handle(Event event) {
-                //return false;
-            //}
-        //});
-
         font = new BitmapFont();
         label = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
         strBuilder = new StringBuilder();
 
+        playerBtnTex = new Texture(Gdx.files.internal("player1.png"));
+        playerBtnTexRegn = new TextureRegion(playerBtnTex);
+        playerBtnTexRegnDrawable = new TextureRegionDrawable(playerBtnTexRegn);
+        playerButton1 = new ImageButton(playerBtnTexRegnDrawable);
+        playerButton1.setSize(Gdx.graphics.getWidth() / 5, Gdx.graphics.getHeight());
+        playerButton1.setPosition(0,0);
+
+        playerBtnTex = new Texture(Gdx.files.internal("player2.png"));
+        playerBtnTexRegn = new TextureRegion(playerBtnTex);
+        playerBtnTexRegnDrawable = new TextureRegionDrawable(playerBtnTexRegn);
+        playerButton2 = new ImageButton(playerBtnTexRegnDrawable);
+        playerButton2.setSize(Gdx.graphics.getWidth() / 5, Gdx.graphics.getHeight());
+        playerButton2.setPosition(0,0);
+
         stage = new Stage();
         stage.addActor(label);
-        //stage.addActor(resetBtn);
         Gdx.input.setInputProcessor(stage);
-        
+
         //3D Stuff
         modelBatch = new ModelBatch();
 
@@ -166,6 +170,14 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         cam3d.update();
         camController.update();
         stage.act(Gdx.graphics.getDeltaTime());
+        if (player == 0) {
+            playerButton1.addAction(Actions.removeActor());
+            stage.addActor(playerButton1);
+        }
+        else {
+            playerButton2.addAction(Actions.removeActor());
+            stage.addActor(playerButton2);
+        }
 
         //Drawing
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -187,6 +199,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         strBuilder.append("   Selected: ").append(selected);
         strBuilder.append("   Player: ").append(player+1);
         label.setText(strBuilder);
+
         stage.draw();
 
     } //Render end
