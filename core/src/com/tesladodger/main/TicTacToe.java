@@ -39,6 +39,14 @@ import java.util.Vector;
 public class TicTacToe extends InputAdapter implements ApplicationListener {
 
     //Logic
+    private int visibleCount;
+    private int player = 0; // 'actual' player - 1
+
+    //Camera
+    private PerspectiveCamera cam3d;
+    private CameraInputController camController;
+
+    //Cubes
     public static class CubeObject extends ModelInstance {
         public final Vector3 center = new Vector3();
         public final Vector3 dimensions = new Vector3();
@@ -52,17 +60,9 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
             radius = dimensions.len() / 2f;
         }
     }
-    private int visibleCount;
+    private Vector<Integer> selectedVec = new Vector();
     private Vector3 position = new Vector3();
     private int selected = -1, selecting = -1;
-    private int player = 0; // 'actual' player - 1
-
-    //Camera
-    private PerspectiveCamera cam3d;
-    private CameraInputController camController;
-
-    //Cubes
-    private Vector<Integer> selectedVec = new Vector();
     private boolean cubeIsUsed;
     private Material player1Material;
     private Material player2Material;
@@ -104,8 +104,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         stage.addActor(label);
         //stage.addActor(resetBtn);
         Gdx.input.setInputProcessor(stage);
-
-
+        
         //3D Stuff
         modelBatch = new ModelBatch();
 
@@ -113,7 +112,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
                 67,
                 Gdx.graphics.getWidth(),
                 Gdx.graphics.getHeight() );
-        cam3d.position.set(5f, 10f, 10f);
+        cam3d.position.set(10f, 14f, 22f);
         cam3d.lookAt(0,0,0);
         cam3d.near = 1f;
         cam3d.far  = 300f;
@@ -128,21 +127,35 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
 
         ModelBuilder modelBuilder = new ModelBuilder();
         player1Material = new Material();
-        player1Material.set(ColorAttribute.createDiffuse(Color.BLUE));
+        player1Material.set(ColorAttribute.createDiffuse(0f, 0f, .7f, 1f));
         player2Material = new Material();
-        player2Material.set(ColorAttribute.createDiffuse(Color.RED));
+        player2Material.set(ColorAttribute.createDiffuse(.7f, 0f, 0f, 1f));
         originalMaterial = new Material();
-        cube = modelBuilder.createBox(2f, 2f, 2f,
-                new Material(ColorAttribute.createDiffuse(Color.WHITE)),
+        cube = modelBuilder.createBox(4f, 4f, 4f,
+                new Material(ColorAttribute.createDiffuse(0.9f, 0.9f, 0.9f, 0f)),
                 Usage.Position | Usage.Normal);
-        for (float x = -5f; x <= 5f; x += 5f) {
-            for (float y = -5f; y <= 5f; y += 5f) {
-                for (float z = -5f; z <= 5f; z += 5f) {
+        float x = -7.5f;
+        while (x <= 7.5f) {
+            float y = -7.5f;
+            while (y <= 7.5f) {
+                float z = -7.5f;
+                while (z <= 7.5f) {
                     CubeObject cubeInstance = new CubeObject(cube);
                     cubeInstance.transform.setToTranslation(x,y,z);
                     cubeInstances.add(cubeInstance);
+                    if (x == -7.5f || x == 7.5f) {
+                        z += 5f;
+                    }
+                    else if (y == -7.5 || y == 7.5) {
+                        z += 5f;
+                    }
+                    else {
+                        z += 15f;
+                    }
                 }
+                y += 5f;
             }
+            x += 5f;
         }
 
     } //Create end
@@ -153,7 +166,6 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         cam3d.update();
         camController.update();
         stage.act(Gdx.graphics.getDeltaTime());
-
 
         //Drawing
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -191,11 +203,6 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         return selecting >= 0;
     }
 
-    //@Override
-    //public boolean touchDragged(int screenX, int screenY, int pointer) {
-        //return selecting >= 0;
-    //}
-
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
         if (selecting >= 0) {
@@ -209,6 +216,9 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
                 if (!cubeIsUsed) {
                     setSelected(selecting, player);
                     selectedVec.add(selected);
+
+                    //todo check if player wins here
+
                     player = 1 - player;
                 }
             }
@@ -218,7 +228,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         return false;
     }
 
-    public void setSelected(int value, int player) {
+    private void setSelected(int value, int player) {
         selected = value;
         if (selected >= 0) {
             Material mat = cubeInstances.get(selected).materials.get(0);
@@ -234,7 +244,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         }
     }
 
-    public int getObject(int screenX, int screenY) {
+    private int getObject(int screenX, int screenY) {
         Ray ray = cam3d.getPickRay(screenX, screenY);
         int result = -1;
         float distance = -1;
@@ -252,12 +262,14 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         return result;
     }
 
+    @Override
     public void dispose() {
         cube.dispose();
         modelBatch.dispose();
         cubeInstances.clear();
     }
 
+    @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
     }
