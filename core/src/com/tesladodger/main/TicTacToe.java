@@ -8,20 +8,19 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.math.collision.Ray;
-//import com.badlogic.gdx.scenes.scene2d.Event;
-//import com.badlogic.gdx.scenes.scene2d.EventListener;
-import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.Model;
@@ -29,31 +28,37 @@ import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
-
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
+import com.badlogic.gdx.graphics.VertexAttributes.Usage;
+import java.util.List;
 import java.util.Vector;
 
 
 public class TicTacToe extends InputAdapter implements ApplicationListener {
 
-    //Logic
-    private int visibleCount;
-    private int player = 0; // 'actual' player - 1
+    //Player
+    private int player = 0; // next player = 1 - player
+    private List<Integer> player1List = new Vector();
+    private List<Integer> player2List = new Vector();
+    private List<Integer> listToCheck = new Vector();
+    private List<Integer> inner = new Vector();
+    private int score1 = 0, score2 = 0;
+    private boolean gameWon = false;
 
     //Camera
     private PerspectiveCamera cam3d;
     private CameraInputController camController;
 
     //Cubes
-    public static class CubeObject extends ModelInstance {
-        public final Vector3 center = new Vector3();
-        public final Vector3 dimensions = new Vector3();
-        public final float radius;
+    private static class CubeObject extends ModelInstance {
+        private final Vector3 center = new Vector3();
+        private final Vector3 dimensions = new Vector3();
+        private final float radius;
         private final static BoundingBox bounds = new BoundingBox();
-        public CubeObject(Model model) {
+        private CubeObject(Model model) {
             super(model);
             calculateBoundingBox(bounds);
             bounds.getCenter(center);
@@ -61,13 +66,13 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
             radius = dimensions.len() / 2f;
         }
     }
-    private Vector<Integer> selectedVec = new Vector();
+    private List<Integer> selectedList = new Vector();
     private Vector3 position = new Vector3();
     private int selected = -1, selecting = -1;
     private boolean cubeIsUsed;
-    private Material player1Material;
-    private Material player2Material;
-    private Material originalMaterial;
+    private Material player1Material;  // blue cube
+    private Material player2Material;  // red cube
+    private Material originalMaterial; // white fish
     private ModelBatch modelBatch;
     private Model cube;
     private Array<CubeObject> cubeInstances = new Array<CubeObject>();
@@ -75,35 +80,67 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
 
     //Stage Stuff
     private Stage stage;
-    private Texture playerBtnTex;
-    private TextureRegion playerBtnTexRegn;
-    private TextureRegionDrawable playerBtnTexRegnDrawable;
     private ImageButton playerButton1;
     private ImageButton playerButton2;
+    private ImageButton gameWonButton1;
+    private ImageButton gameWonButton2;
     private Label label;
-    private BitmapFont font;
     private StringBuilder strBuilder;
 
     @Override
     public void create() {
         //Stage
-        font = new BitmapFont();
+        BitmapFont font = new BitmapFont();
         label = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
         strBuilder = new StringBuilder();
 
-        playerBtnTex = new Texture(Gdx.files.internal("player1.png"));
-        playerBtnTexRegn = new TextureRegion(playerBtnTex);
-        playerBtnTexRegnDrawable = new TextureRegionDrawable(playerBtnTexRegn);
-        playerButton1 = new ImageButton(playerBtnTexRegnDrawable);
-        playerButton1.setSize(Gdx.graphics.getWidth() / 5, Gdx.graphics.getHeight());
-        playerButton1.setPosition(0,0);
+        Texture playerBtnTex = new Texture(Gdx.files.internal("player1.png"));
+        TextureRegion playerBtnTexRgn = new TextureRegion(playerBtnTex);
+        TextureRegionDrawable playerBtnTexRgnDr = new TextureRegionDrawable(playerBtnTexRgn);
+        playerButton1 = new ImageButton(playerBtnTexRgnDr);
+        playerButton1.setSize(Gdx.graphics.getWidth() / 5f, Gdx.graphics.getHeight());
+        //playerButton1.setPosition(0,0);
 
         playerBtnTex = new Texture(Gdx.files.internal("player2.png"));
-        playerBtnTexRegn = new TextureRegion(playerBtnTex);
-        playerBtnTexRegnDrawable = new TextureRegionDrawable(playerBtnTexRegn);
-        playerButton2 = new ImageButton(playerBtnTexRegnDrawable);
-        playerButton2.setSize(Gdx.graphics.getWidth() / 5, Gdx.graphics.getHeight());
-        playerButton2.setPosition(0,0);
+        playerBtnTexRgn = new TextureRegion(playerBtnTex);
+        playerBtnTexRgnDr = new TextureRegionDrawable(playerBtnTexRgn);
+        playerButton2 = new ImageButton(playerBtnTexRgnDr);
+        playerButton2.setSize(Gdx.graphics.getWidth() / 5f, Gdx.graphics.getHeight());
+        //playerButton2.setPosition(0,0);
+
+        Texture gWT = new Texture(Gdx.files.internal("win1.png"));
+        TextureRegion gWTR = new TextureRegion(gWT);
+        TextureRegionDrawable gWTRD = new TextureRegionDrawable(gWTR);
+        gameWonButton1 = new ImageButton(gWTRD);
+        gameWonButton1.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        gameWonButton1.setPosition(0,0);
+        gameWonButton1.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true;
+            }
+            @Override
+            public void touchUp (InputEvent event, float x, float y, int pointer, int button) {
+                resetGame();
+            }
+        });
+
+        gWT = new Texture(Gdx.files.internal("win2.png"));
+        gWTR = new TextureRegion(gWT);
+        gWTRD = new TextureRegionDrawable(gWTR);
+        gameWonButton2 = new ImageButton(gWTRD);
+        gameWonButton2.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        gameWonButton2.setPosition(0,0);
+        gameWonButton2.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true;
+            }
+            @Override
+            public void touchUp (InputEvent event, float x, float y, int pointer, int button) {
+                resetGame();
+            }
+        });
 
         stage = new Stage();
         stage.addActor(label);
@@ -179,25 +216,32 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
             stage.addActor(playerButton2);
         }
 
+        if (gameWon) {
+            if      (player == 0) stage.addActor(gameWonButton2);
+            else if (player == 1) stage.addActor(gameWonButton1);
+            Gdx.input.setInputProcessor(stage);
+        }
+
         //Drawing
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
-        visibleCount = 0;
         modelBatch.begin(cam3d);
         for (final CubeObject cubeInstance : cubeInstances) {
             if (isVisible(cam3d, cubeInstance)) {
                 modelBatch.render(cubeInstance, environment);
-                visibleCount++;
             }
         }
         modelBatch.end();
 
         strBuilder.setLength(0);
         strBuilder.append(" FPS: ").append(Gdx.graphics.getFramesPerSecond());
-        strBuilder.append("   Visible: ").append(visibleCount);
         strBuilder.append("   Selected: ").append(selected);
         strBuilder.append("   Player: ").append(player+1);
+        strBuilder.append("   Sc1: ").append(score1);
+        strBuilder.append("   Sc2: ").append(score2);
+        strBuilder.append("   inner:").append(inner);
+        strBuilder.append("   listToCheck").append(listToCheck);
         label.setText(strBuilder);
 
         stage.draw();
@@ -220,19 +264,232 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
         if (selecting >= 0) {
             if (selecting == getObject(screenX, screenY)) {
+
+                // Check if cube is already used
                 cubeIsUsed = false;
-                for (int j = 0; j < selectedVec.size(); j++) {
-                    if (selecting == selectedVec.get(j)) {
+                for (int j = 0; j < selectedList.size(); j++) {
+                    if (selecting == selectedList.get(j)) {
                         cubeIsUsed = true;
+                        break;
                     }
                 }
                 if (!cubeIsUsed) {
-                    setSelected(selecting, player);
-                    selectedVec.add(selected);
+                    setSelected(selecting);
+                    selectedList.add(selected);
+                    if (player == 0) {
+                        player1List.add(selected);
+                        //Collections.sort(player1List);
+                        listToCheck = player1List;
+                    }
+                    else if (player == 1) {
+                        player2List.add(selected);
+                        //Collections.sort(player2List);
+                        listToCheck = player2List;
+                    }
 
-                    //todo check if player wins here
+                    // what an ugly mess (but it fucking works, btw)
+                    inner.clear();    inner.add(0);inner.add(1);inner.add(2);inner.add(3);
+                    if (listToCheck.containsAll(inner))     gameWon = true;
+                    if (!gameWon) {
+                        inner.clear();inner.add(0);inner.add(4);inner.add(8);inner.add(12);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(0);inner.add(5);inner.add(10);inner.add(15);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(0);inner.add(16);inner.add(28);inner.add(40);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(0);inner.add(20);inner.add(34);inner.add(52);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(0);inner.add(17);inner.add(30);inner.add(43);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(1);inner.add(5);inner.add(9);inner.add(13);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(1);inner.add(17);inner.add(29);inner.add(4);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(2);inner.add(6);inner.add(10);inner.add(14);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(2);inner.add(18);inner.add(30);inner.add(42);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(3);inner.add(6);inner.add(9);inner.add(12);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(3);inner.add(7);inner.add(11);inner.add(15);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(3);inner.add(18);inner.add(29);inner.add(40);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(3);inner.add(19);inner.add(31);inner.add(43);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(3);inner.add(21);inner.add(35);inner.add(55);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(4);inner.add(5);inner.add(6);inner.add(7);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(4);inner.add(20);inner.add(32);inner.add(44);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(7);inner.add(21);inner.add(33);inner.add(47);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(8);inner.add(9);inner.add(10);inner.add(11);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(8);inner.add(22);inner.add(34);inner.add(48);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(11);inner.add(23);inner.add(35);inner.add(51);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(12);inner.add(13);inner.add(14);inner.add(15);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(12);inner.add(22);inner.add(32);inner.add(40);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(12);inner.add(24);inner.add(36);inner.add(52);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(12);inner.add(25);inner.add(38);inner.add(55);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(13);inner.add(25);inner.add(37);inner.add(53);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(14);inner.add(26);inner.add(38);inner.add(54);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(15);inner.add(23);inner.add(33);inner.add(43);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(15);inner.add(26);inner.add(37);inner.add(52);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(15);inner.add(27);inner.add(39);inner.add(55);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(16);inner.add(17);inner.add(18);inner.add(19);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(16);inner.add(20);inner.add(22);inner.add(24);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(19);inner.add(21);inner.add(23);inner.add(27);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(24);inner.add(25);inner.add(26);inner.add(27);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(28);inner.add(29);inner.add(30);inner.add(31);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(28);inner.add(32);inner.add(34);inner.add(36);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(31);inner.add(33);inner.add(35);inner.add(39);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(36);inner.add(37);inner.add(38);inner.add(39);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(40);inner.add(41);inner.add(42);inner.add(43);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(40);inner.add(44);inner.add(48);inner.add(52);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(40);inner.add(45);inner.add(50);inner.add(55);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(41);inner.add(45);inner.add(49);inner.add(53);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(42);inner.add(46);inner.add(50);inner.add(54);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(43);inner.add(46);inner.add(49);inner.add(52);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(43);inner.add(47);inner.add(51);inner.add(55);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(44);inner.add(45);inner.add(46);inner.add(47);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(48);inner.add(49);inner.add(50);inner.add(51);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
+                    if (!gameWon) {
+                        inner.clear();inner.add(52);inner.add(53);inner.add(54);inner.add(55);
+                        if (listToCheck.containsAll(inner)) gameWon = true;
+                    }
 
+                    if (gameWon) {
+                        if (player == 0) {
+                            score1 += 1;
+                        }
+                        else if (player == 1) {
+                            score2 += 1;
+                        }
+                    }
+                    // swap player even if game is won, so that the loser gets to start the new game
                     player = 1 - player;
+
                 }
             }
             selecting = -1;
@@ -241,7 +498,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         return false;
     }
 
-    private void setSelected(int value, int player) {
+    private void setSelected(int value) {
         selected = value;
         if (selected >= 0) {
             Material mat = cubeInstances.get(selected).materials.get(0);
@@ -275,9 +532,34 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         return result;
     }
 
+    private void resetGame() {
+        for (int i = 0; i < player1List.size(); i++) {
+            Material mat = cubeInstances.get(player1List.get(i)).materials.get(0);
+            player1Material.clear();
+            player1Material.set(mat);
+            mat.clear();
+            mat.set(originalMaterial);
+        }
+        for (int i = 0; i < player2List.size(); i++) {
+            Material mat = cubeInstances.get(player2List.get(i)).materials.get(0);
+            player2Material.clear();
+            player2Material.set(mat);
+            mat.clear();
+            mat.set(originalMaterial);
+        }
+        player1List.clear();
+        player2List.clear();
+        selectedList.clear();
+        gameWon = false;
+        Gdx.input.setInputProcessor(new InputMultiplexer(this, camController));
+        if (player == 0) gameWonButton2.addAction(Actions.removeActor());
+        if (player == 1) gameWonButton1.addAction(Actions.removeActor());
+    }
+
     @Override
     public void dispose() {
         cube.dispose();
+        stage.dispose();
         modelBatch.dispose();
         cubeInstances.clear();
     }
