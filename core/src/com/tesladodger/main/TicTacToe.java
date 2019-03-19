@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+//import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
@@ -84,15 +85,16 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
     private ImageButton playerButton2;
     private ImageButton gameWonButton1;
     private ImageButton gameWonButton2;
-    private Label label;
-    private StringBuilder strBuilder;
+    //private TextButton scoreBoard;      // todo this
+    private Label debugLabel;
+    private StringBuilder debugLabelBuilder;
 
     @Override
     public void create() {
         //Stage
         BitmapFont font = new BitmapFont();
-        label = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
-        strBuilder = new StringBuilder();
+        debugLabel = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
+        debugLabelBuilder = new StringBuilder();
 
         Texture playerBtnTex = new Texture(Gdx.files.internal("player1.png"));
         TextureRegion playerBtnTexRgn = new TextureRegion(playerBtnTex);
@@ -100,7 +102,6 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         playerButton1 = new ImageButton(playerBtnTexRgnDr);
         playerButton1.setSize(Gdx.graphics.getWidth() / 5f, Gdx.graphics.getHeight());
         //playerButton1.setPosition(0,0);
-
         playerBtnTex = new Texture(Gdx.files.internal("player2.png"));
         playerBtnTexRgn = new TextureRegion(playerBtnTex);
         playerBtnTexRgnDr = new TextureRegionDrawable(playerBtnTexRgn);
@@ -124,7 +125,6 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
                 resetGame();
             }
         });
-
         gWT = new Texture(Gdx.files.internal("win2.png"));
         gWTR = new TextureRegion(gWT);
         gWTRD = new TextureRegionDrawable(gWTR);
@@ -143,7 +143,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         });
 
         stage = new Stage();
-        stage.addActor(label);
+        stage.addActor(debugLabel);
         Gdx.input.setInputProcessor(stage);
 
         //3D Stuff
@@ -234,15 +234,15 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         }
         modelBatch.end();
 
-        strBuilder.setLength(0);
-        strBuilder.append(" FPS: ").append(Gdx.graphics.getFramesPerSecond());
-        strBuilder.append("   Selected: ").append(selected);
-        strBuilder.append("   Player: ").append(player+1);
-        strBuilder.append("   Sc1: ").append(score1);
-        strBuilder.append("   Sc2: ").append(score2);
-        strBuilder.append("   inner:").append(inner);
-        strBuilder.append("   listToCheck").append(listToCheck);
-        label.setText(strBuilder);
+        debugLabelBuilder.setLength(0);
+        debugLabelBuilder.append(" FPS: ").append(Gdx.graphics.getFramesPerSecond());
+        debugLabelBuilder.append("   Selected: ").append(selected);
+        debugLabelBuilder.append("   Player: ").append(player+1);
+        debugLabelBuilder.append("   Sc1: ").append(score1);
+        debugLabelBuilder.append("   Sc2: ").append(score2);
+        debugLabelBuilder.append("   inner:").append(inner);
+        debugLabelBuilder.append("   listToCheck").append(listToCheck);
+        debugLabel.setText(debugLabelBuilder);
 
         stage.draw();
 
