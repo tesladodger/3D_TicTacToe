@@ -85,30 +85,31 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
     private ImageButton playerButton2;
     private ImageButton gameWonButton1;
     private ImageButton gameWonButton2;
+    private ImageButton drawButton;
     //private TextButton scoreBoard;      // todo this
     private Label debugLabel;
     private StringBuilder debugLabelBuilder;
 
     @Override
     public void create() {
-        //Stage
+        /* ______________________________STAGE_AND_BUTTONS___________________*/
         BitmapFont font = new BitmapFont();
         debugLabel = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
         debugLabelBuilder = new StringBuilder();
 
-        Texture playerBtnTex = new Texture(Gdx.files.internal("player1.png"));
-        TextureRegion playerBtnTexRgn = new TextureRegion(playerBtnTex);
-        TextureRegionDrawable playerBtnTexRgnDr = new TextureRegionDrawable(playerBtnTexRgn);
-        playerButton1 = new ImageButton(playerBtnTexRgnDr);
+        //Player indicator
+        Texture pBT = new Texture(Gdx.files.internal("player1.png"));
+        TextureRegion pBTR = new TextureRegion(pBT);
+        TextureRegionDrawable pBTRD = new TextureRegionDrawable(pBTR);
+        playerButton1 = new ImageButton(pBTRD);
         playerButton1.setSize(Gdx.graphics.getWidth() / 5f, Gdx.graphics.getHeight());
-        //playerButton1.setPosition(0,0);
-        playerBtnTex = new Texture(Gdx.files.internal("player2.png"));
-        playerBtnTexRgn = new TextureRegion(playerBtnTex);
-        playerBtnTexRgnDr = new TextureRegionDrawable(playerBtnTexRgn);
-        playerButton2 = new ImageButton(playerBtnTexRgnDr);
+        pBT = new Texture(Gdx.files.internal("player2.png"));
+        pBTR = new TextureRegion(pBT);
+        pBTRD = new TextureRegionDrawable(pBTR);
+        playerButton2 = new ImageButton(pBTRD);
         playerButton2.setSize(Gdx.graphics.getWidth() / 5f, Gdx.graphics.getHeight());
-        //playerButton2.setPosition(0,0);
 
+        //Win and draw buttons
         Texture gWT = new Texture(Gdx.files.internal("win1.png"));
         TextureRegion gWTR = new TextureRegion(gWT);
         TextureRegionDrawable gWTRD = new TextureRegionDrawable(gWTR);
@@ -141,14 +142,31 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
                 resetGame();
             }
         });
+        gWT = new Texture(Gdx.files.internal("draw.png"));
+        gWTR = new TextureRegion(gWT);
+        gWTRD = new TextureRegionDrawable(gWTR);
+        drawButton = new ImageButton(gWTRD);
+        drawButton.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        drawButton.setPosition(0, 0);
+        drawButton.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true;
+            }
+            @Override
+            public void touchUp (InputEvent event, float x, float y, int pointer, int button) {
+                resetGame();
+            }
+        });
 
         stage = new Stage();
         stage.addActor(debugLabel);
         Gdx.input.setInputProcessor(stage);
 
-        //3D Stuff
+        /* ______________________________3D_STUFF____________________________*/
         modelBatch = new ModelBatch();
 
+        // Camera
         cam3d = new PerspectiveCamera(
                 67,
                 Gdx.graphics.getWidth(),
@@ -161,11 +179,13 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         camController = new CameraInputController(cam3d);
         Gdx.input.setInputProcessor(new InputMultiplexer(this, camController));
 
+        // Lights
         environment = new Environment();
         environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
         environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
         environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, 1f, 0.8f, 0.2f));
 
+        // Cubes
         ModelBuilder modelBuilder = new ModelBuilder();
         player1Material = new Material();
         player1Material.set(ColorAttribute.createDiffuse(0f, 0f, .7f, 1f));
@@ -203,10 +223,12 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
 
     @Override
     public void render() {
-        //Logic
+
         cam3d.update();
         camController.update();
         stage.act(Gdx.graphics.getDeltaTime());
+
+        // Current player
         if (player == 0) {
             playerButton1.addAction(Actions.removeActor());
             stage.addActor(playerButton1);
@@ -216,16 +238,21 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
             stage.addActor(playerButton2);
         }
 
+        // Game end buttons
+        if (selectedList.size() >= 56) {
+            stage.addActor(drawButton);
+            Gdx.input.setInputProcessor(stage);
+        }
         if (gameWon) {
             if      (player == 0) stage.addActor(gameWonButton2);
             else if (player == 1) stage.addActor(gameWonButton1);
             Gdx.input.setInputProcessor(stage);
         }
 
-        //Drawing
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
+        // Cubes and lights
         modelBatch.begin(cam3d);
         for (final CubeObject cubeInstance : cubeInstances) {
             if (isVisible(cam3d, cubeInstance)) {
@@ -234,12 +261,12 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         }
         modelBatch.end();
 
+        // Debugging label
         debugLabelBuilder.setLength(0);
         debugLabelBuilder.append(" FPS: ").append(Gdx.graphics.getFramesPerSecond());
         debugLabelBuilder.append("   Selected: ").append(selected);
-        debugLabelBuilder.append("   Player: ").append(player+1);
-        debugLabelBuilder.append("   Sc1: ").append(score1);
-        debugLabelBuilder.append("   Sc2: ").append(score2);
+        debugLabelBuilder.append("   Score1: ").append(score1);
+        debugLabelBuilder.append("   Score2: ").append(score2);
         debugLabelBuilder.append("   inner:").append(inner);
         debugLabelBuilder.append("   listToCheck").append(listToCheck);
         debugLabel.setText(debugLabelBuilder);
@@ -249,6 +276,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
     } //Render end
 
     private boolean isVisible(final Camera cam3d, final CubeObject cubeInstance) {
+        // Viewing-frustum culling
         cubeInstance.transform.getTranslation(position);
         position.add(cubeInstance.center);
         return cam3d.frustum.sphereInFrustum(position, cubeInstance.radius);
@@ -278,16 +306,14 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
                     selectedList.add(selected);
                     if (player == 0) {
                         player1List.add(selected);
-                        //Collections.sort(player1List);
                         listToCheck = player1List;
                     }
                     else if (player == 1) {
                         player2List.add(selected);
-                        //Collections.sort(player2List);
                         listToCheck = player2List;
                     }
 
-                    // what an ugly mess (but it fucking works, btw)
+                    // what an ugly mess (but it fucking works)
                     inner.clear();    inner.add(0);inner.add(1);inner.add(2);inner.add(3);
                     if (listToCheck.containsAll(inner))     gameWon = true;
                     if (!gameWon) {
@@ -487,6 +513,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
                             score2 += 1;
                         }
                     }
+
                     // swap player even if game is won, so that the loser gets to start the new game
                     player = 1 - player;
 
@@ -533,6 +560,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
     }
 
     private void resetGame() {
+        // Reset the color of the selected cubes
         for (int i = 0; i < player1List.size(); i++) {
             Material mat = cubeInstances.get(player1List.get(i)).materials.get(0);
             player1Material.clear();
@@ -547,13 +575,20 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
             mat.clear();
             mat.set(originalMaterial);
         }
+
+        // Clear the lists
         player1List.clear();
         player2List.clear();
         selectedList.clear();
+
         gameWon = false;
+
         Gdx.input.setInputProcessor(new InputMultiplexer(this, camController));
-        if (player == 0) gameWonButton2.addAction(Actions.removeActor());
-        if (player == 1) gameWonButton1.addAction(Actions.removeActor());
+
+        // Remove the game end buttons
+        gameWonButton2.addAction(Actions.removeActor());
+        gameWonButton1.addAction(Actions.removeActor());
+        drawButton.addAction(Actions.removeActor());
     }
 
     @Override
