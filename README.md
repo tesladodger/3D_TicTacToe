@@ -14,8 +14,3 @@ Two player take turns clicking on the cubes until one wins or all the cubes are 
 ![](https://github.com/tesladodger/3D_TicTacToe/blob/master/screenshots/Screenshot_20190319-115710.png)
 
 ![](https://github.com/tesladodger/3D_TicTacToe/blob/master/screenshots/Screenshot_20190320-123621.png)
-
-
-## To do
-
-1. Score Board
