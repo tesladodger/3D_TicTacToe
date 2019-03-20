@@ -13,7 +13,6 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-//import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
@@ -40,7 +39,7 @@ import java.util.Vector;
 
 public class TicTacToe extends InputAdapter implements ApplicationListener {
 
-    //Player
+    // Player
     private int player = 0; // next player = 1 - player
     private List<Integer> player1List = new Vector();
     private List<Integer> player2List = new Vector();
@@ -49,11 +48,11 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
     private int score1 = 0, score2 = 0;
     private boolean gameWon = false;
 
-    //Camera
+    // Camera
     private PerspectiveCamera cam3d;
     private CameraInputController camController;
 
-    //Cubes
+    // Cubes
     private static class CubeObject extends ModelInstance {
         private final Vector3 center = new Vector3();
         private final Vector3 dimensions = new Vector3();
@@ -79,41 +78,49 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
     private Array<CubeObject> cubeInstances = new Array<CubeObject>();
     private Environment environment;
 
-    //Stage Stuff
+    // Stage Stuff
     private Stage stage;
     private ImageButton playerButton1;
     private ImageButton playerButton2;
     private ImageButton gameWonButton1;
     private ImageButton gameWonButton2;
     private ImageButton drawButton;
-    //private TextButton scoreBoard;      // todo this
+    private Label scoreBoard;
+    private StringBuilder scoreBoardBuilder;
     private Label debugLabel;
     private StringBuilder debugLabelBuilder;
 
     @Override
     public void create() {
-        /* ______________________________STAGE_AND_BUTTONS___________________*/
-        BitmapFont font = new BitmapFont();
-        debugLabel = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
+        /* ______________________________STAGE_AND_BUTTONS__________________ */
+        // Debug
+        BitmapFont font   = new BitmapFont();
+        debugLabel        = new Label("Send", new Label.LabelStyle(font, Color.WHITE));
         debugLabelBuilder = new StringBuilder();
 
-        //Player indicator
-        Texture pBT = new Texture(Gdx.files.internal("player1.png"));
-        TextureRegion pBTR = new TextureRegion(pBT);
+        // Score Board
+        scoreBoard = new Label("Nudes", new Label.LabelStyle(font, Color.WHITE));
+        scoreBoard.setPosition(Gdx.graphics.getWidth() / 2f, Gdx.graphics.getHeight() * .9f);
+        scoreBoard.setFontScale(2f); // This looks like shit
+        scoreBoardBuilder = new StringBuilder();
+
+        // Player indicator
+        Texture pBT                 = new Texture(Gdx.files.internal("player1.png"));
+        TextureRegion pBTR          = new TextureRegion(pBT);
         TextureRegionDrawable pBTRD = new TextureRegionDrawable(pBTR);
-        playerButton1 = new ImageButton(pBTRD);
+        playerButton1               = new ImageButton(pBTRD);
         playerButton1.setSize(Gdx.graphics.getWidth() / 5f, Gdx.graphics.getHeight());
-        pBT = new Texture(Gdx.files.internal("player2.png"));
-        pBTR = new TextureRegion(pBT);
-        pBTRD = new TextureRegionDrawable(pBTR);
+        pBT           = new Texture(Gdx.files.internal("player2.png"));
+        pBTR          = new TextureRegion(pBT);
+        pBTRD         = new TextureRegionDrawable(pBTR);
         playerButton2 = new ImageButton(pBTRD);
         playerButton2.setSize(Gdx.graphics.getWidth() / 5f, Gdx.graphics.getHeight());
 
-        //Win and draw buttons
-        Texture gWT = new Texture(Gdx.files.internal("win1.png"));
-        TextureRegion gWTR = new TextureRegion(gWT);
+        // Win and draw buttons
+        Texture gWT                 = new Texture(Gdx.files.internal("win1.png"));
+        TextureRegion gWTR          = new TextureRegion(gWT);
         TextureRegionDrawable gWTRD = new TextureRegionDrawable(gWTR);
-        gameWonButton1 = new ImageButton(gWTRD);
+        gameWonButton1              = new ImageButton(gWTRD);
         gameWonButton1.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         gameWonButton1.setPosition(0,0);
         gameWonButton1.addListener(new InputListener() {
@@ -126,9 +133,9 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
                 resetGame();
             }
         });
-        gWT = new Texture(Gdx.files.internal("win2.png"));
-        gWTR = new TextureRegion(gWT);
-        gWTRD = new TextureRegionDrawable(gWTR);
+        gWT            = new Texture(Gdx.files.internal("win2.png"));
+        gWTR           = new TextureRegion(gWT);
+        gWTRD          = new TextureRegionDrawable(gWTR);
         gameWonButton2 = new ImageButton(gWTRD);
         gameWonButton2.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         gameWonButton2.setPosition(0,0);
@@ -142,9 +149,9 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
                 resetGame();
             }
         });
-        gWT = new Texture(Gdx.files.internal("draw.png"));
-        gWTR = new TextureRegion(gWT);
-        gWTRD = new TextureRegionDrawable(gWTR);
+        gWT        = new Texture(Gdx.files.internal("draw.png"));
+        gWTR       = new TextureRegion(gWT);
+        gWTRD      = new TextureRegionDrawable(gWTR);
         drawButton = new ImageButton(gWTRD);
         drawButton.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         drawButton.setPosition(0, 0);
@@ -160,10 +167,10 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         });
 
         stage = new Stage();
+        stage.addActor(scoreBoard);
         stage.addActor(debugLabel);
-        Gdx.input.setInputProcessor(stage);
 
-        /* ______________________________3D_STUFF____________________________*/
+        /* ______________________________3D_STUFF___________________________ */
         modelBatch = new ModelBatch();
 
         // Camera
@@ -187,9 +194,9 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
 
         // Cubes
         ModelBuilder modelBuilder = new ModelBuilder();
-        player1Material = new Material();
+        player1Material  = new Material();
         player1Material.set(ColorAttribute.createDiffuse(0f, 0f, .7f, 1f));
-        player2Material = new Material();
+        player2Material  = new Material();
         player2Material.set(ColorAttribute.createDiffuse(.7f, 0f, 0f, 1f));
         originalMaterial = new Material();
         cube = modelBuilder.createBox(4f, 4f, 4f,
@@ -204,22 +211,14 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
                     CubeObject cubeInstance = new CubeObject(cube);
                     cubeInstance.transform.setToTranslation(x,y,z);
                     cubeInstances.add(cubeInstance);
-                    if (x == -7.5f || x == 7.5f) {
-                        z += 5f;
-                    }
-                    else if (y == -7.5 || y == 7.5) {
-                        z += 5f;
-                    }
-                    else {
-                        z += 15f;
-                    }
-                }
-                y += 5f;
-            }
-            x += 5f;
+                    if (x == -7.5f || x == 7.5f) z += 5f;
+                    else if (y == -7.5 || y == 7.5) z += 5f;
+                    else z += 15f;
+                } y += 5f;
+            } x += 5f;
         }
 
-    } //Create end
+    } // Create end
 
     @Override
     public void render() {
@@ -261,19 +260,22 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         }
         modelBatch.end();
 
+        // Score Board
+        scoreBoardBuilder.setLength(0);
+        scoreBoardBuilder.append(score1).append(" - ").append(score2);
+        scoreBoard.setText(scoreBoardBuilder);
+
         // Debugging label
         debugLabelBuilder.setLength(0);
         debugLabelBuilder.append(" FPS: ").append(Gdx.graphics.getFramesPerSecond());
         debugLabelBuilder.append("   Selected: ").append(selected);
-        debugLabelBuilder.append("   Score1: ").append(score1);
-        debugLabelBuilder.append("   Score2: ").append(score2);
         debugLabelBuilder.append("   inner:").append(inner);
         debugLabelBuilder.append("   listToCheck").append(listToCheck);
         debugLabel.setText(debugLabelBuilder);
 
         stage.draw();
 
-    } //Render end
+    } // Render end
 
     private boolean isVisible(final Camera cam3d, final CubeObject cubeInstance) {
         // Viewing-frustum culling
@@ -514,7 +516,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
                         }
                     }
 
-                    // swap player even if game is won, so that the loser gets to start the new game
+                    // swap player even if game is won, the loser starts the new game
                     player = 1 - player;
 
                 }
@@ -523,7 +525,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
             return true;
         }
         return false;
-    }
+    } // touchUp end
 
     private void setSelected(int value) {
         selected = value;
@@ -543,7 +545,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
 
     private int getObject(int screenX, int screenY) {
         Ray ray = cam3d.getPickRay(screenX, screenY);
-        int result = -1;
+        int   result   = -1;
         float distance = -1;
         for (int i = 0; i < cubeInstances.size; ++i) {
             final CubeObject cubeInstance = cubeInstances.get(i);
@@ -552,7 +554,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
             float dist2 = ray.origin.dst2(position);
             if (distance >= 0 && dist2 > distance) continue;
             if (Intersector.intersectRaySphere(ray, position, cubeInstance.radius, null)) {
-                result = i;
+                result   = i;
                 distance = dist2;
             }
         }
