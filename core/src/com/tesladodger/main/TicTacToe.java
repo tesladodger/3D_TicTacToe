@@ -4,12 +4,14 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.math.collision.Ray;
-import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -44,7 +46,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
     private List<Integer> player1List = new Vector();
     private List<Integer> player2List = new Vector();
     private List<Integer> listToCheck = new Vector();
-    private List<Integer> inner = new Vector();
+    private List<Integer> inner       = new Vector();
     private int score1 = 0, score2 = 0;
     private boolean gameWon = false;
 
@@ -54,7 +56,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
 
     // Cubes
     private static class CubeObject extends ModelInstance {
-        private final Vector3 center = new Vector3();
+        private final Vector3 center     = new Vector3();
         private final Vector3 dimensions = new Vector3();
         private final float radius;
         private final static BoundingBox bounds = new BoundingBox();
@@ -86,6 +88,9 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
     private ImageButton gameWonButton2;
     private ImageButton drawButton;
     private Label scoreBoard;
+    private FreeTypeFontGenerator ftfGen;
+    private FreeTypeFontParameter ftfPar;
+    private BitmapFont hackFont;
     private StringBuilder scoreBoardBuilder;
     private Label debugLabel;
     private StringBuilder debugLabelBuilder;
@@ -99,10 +104,13 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         debugLabelBuilder = new StringBuilder();
 
         // Score Board
-        scoreBoard = new Label("Nudes", new Label.LabelStyle(font, Color.WHITE));
-        scoreBoard.setPosition(Gdx.graphics.getWidth() / 2f, Gdx.graphics.getHeight() * .9f);
-        scoreBoard.setFontScale(2f); // This looks like shit
-        scoreBoardBuilder = new StringBuilder();
+        ftfGen               = new FreeTypeFontGenerator(Gdx.files.internal("Hack-Bold.ttf"));
+        ftfPar               = new FreeTypeFontParameter();
+        ftfPar.size          = 36;
+        hackFont             = ftfGen.generateFont(ftfPar);
+        scoreBoard           = new Label("Nudes", new Label.LabelStyle(hackFont, Color.WHITE));
+        scoreBoard.setPosition(Gdx.graphics.getWidth() / 3.8f, Gdx.graphics.getHeight() * .9f);
+        scoreBoardBuilder    = new StringBuilder();
 
         // Player indicator
         Texture pBT                 = new Texture(Gdx.files.internal("player1.png"));
@@ -184,7 +192,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         cam3d.far  = 300f;
         cam3d.update();
         camController = new CameraInputController(cam3d);
-        Gdx.input.setInputProcessor(new InputMultiplexer(this, camController));
+        Gdx.input.setInputProcessor(new InputMultiplexer(this, camController)); // todo
 
         // Lights
         environment = new Environment();
@@ -262,7 +270,9 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
 
         // Score Board
         scoreBoardBuilder.setLength(0);
+        scoreBoardBuilder.append("Player 1  ");
         scoreBoardBuilder.append(score1).append(" - ").append(score2);
+        scoreBoardBuilder.append("  Player 2");
         scoreBoard.setText(scoreBoardBuilder);
 
         // Debugging label
@@ -287,6 +297,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         selecting = getObject(screenX, screenY);
+        //touchBegin.set(screenX, Gdx.graphics.getHeight() - screenY);
         return selecting >= 0;
     }
 
@@ -599,6 +610,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         stage.dispose();
         modelBatch.dispose();
         cubeInstances.clear();
+        ftfGen.dispose();
     }
 
     @Override
