@@ -109,7 +109,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         ftfPar.size          = 36;
         hackFont             = ftfGen.generateFont(ftfPar);
         scoreBoard           = new Label("Nudes", new Label.LabelStyle(hackFont, Color.WHITE));
-        scoreBoard.setPosition(Gdx.graphics.getWidth() / 3.8f, Gdx.graphics.getHeight() * .9f);
+        scoreBoard.setPosition(Gdx.graphics.getWidth() / 2.18f, Gdx.graphics.getHeight() * .9f);
         scoreBoardBuilder    = new StringBuilder();
 
         // Player indicator
@@ -192,7 +192,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
         cam3d.far  = 300f;
         cam3d.update();
         camController = new CameraInputController(cam3d);
-        Gdx.input.setInputProcessor(new InputMultiplexer(this, camController)); // todo
+        Gdx.input.setInputProcessor(new InputMultiplexer(this, camController));
 
         // Lights
         environment = new Environment();
@@ -270,9 +270,7 @@ public class TicTacToe extends InputAdapter implements ApplicationListener {
 
         // Score Board
         scoreBoardBuilder.setLength(0);
-        scoreBoardBuilder.append("Player 1  ");
         scoreBoardBuilder.append(score1).append(" - ").append(score2);
-        scoreBoardBuilder.append("  Player 2");
         scoreBoard.setText(scoreBoardBuilder);
 
         // Debugging label
